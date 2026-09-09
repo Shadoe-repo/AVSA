@@ -1,0 +1,202 @@
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  --bg: #071018;
+  --card-bg: #0b1723;
+  --text-primary: #F7FAFC;
+  --text-secondary: #AAB6C4;
+  --text-muted: #718092;
+  
+  --critical: #FF453A;
+  --high: #FF9F0A;
+  --moderate: #FFD60A;
+  --success: #30D158;
+  --info: #0A84FF;
+  --voice: #BF5AF2;
+
+  --glass-fill: rgba(255, 255, 255, 0.08);
+  --glass-fill-strong: rgba(255, 255, 255, 0.15);
+  --glass-fill-modal: rgba(14, 26, 38, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.35);
+
+  --radius-card: 20px;
+  --radius-sheet: 30px;
+  --radius-button: 17px;
+  --blur-glass: 24px;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* Tabular numbers for non-shifting vitals and ETA */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* iOS 26 Liquid Crystal Surface Classes */
+.crystal-card {
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--blur-glass)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 var(--glass-highlight);
+  border-radius: var(--radius-card);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crystal-card:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.55), inset 0 1px 2px 0 rgba(255, 255, 255, 0.45);
+}
+
+.crystal-panel-elevated {
+  background: var(--glass-fill-strong);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.55), inset 0 1px 2px 0 var(--glass-highlight);
+  border-radius: var(--radius-sheet);
+}
+
+.crystal-modal {
+  background: var(--glass-fill-modal);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  box-shadow: 0 24px 60px 0 rgba(0, 0, 0, 0.7), inset 0 1px 2px 0 rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-sheet);
+}
+
+/* Critical state breathing pulse */
+.crystal-critical {
+  background: linear-gradient(135deg, rgba(255, 69, 58, 0.16) 0%, rgba(255, 69, 58, 0.05) 100%);
+  border: 1px solid rgba(255, 69, 58, 0.65);
+  animation: criticalBreathing 2.2s infinite ease-in-out;
+}
+
+@keyframes criticalBreathing {
+  0%, 100% {
+    box-shadow: 0 0 14px 0 rgba(255, 69, 58, 0.35), inset 0 0 12px 0 rgba(255, 69, 58, 0.15);
+    border-color: rgba(255, 69, 58, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 28px 6px rgba(255, 69, 58, 0.6), inset 0 0 20px 0 rgba(255, 69, 58, 0.35);
+    border-color: rgba(255, 69, 58, 0.95);
+  }
+}
+
+.crystal-btn-primary {
+  background: rgba(10, 132, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(10, 132, 255, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-button);
+  color: #FFFFFF;
+  font-weight: 600;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.crystal-btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.5);
+}
+
+.crystal-btn-secondary {
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-button);
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: transform 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+}
+
+.crystal-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.crystal-btn-secondary:active {
+  transform: scale(0.97);
+}
+
+/* Voice Orb Wave animation */
+.voice-orb {
+  background: radial-gradient(circle, #BF5AF2 0%, #8E24AA 70%, rgba(142, 36, 170, 0.4) 100%);
+  box-shadow: 0 0 30px rgba(191, 90, 242, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.voice-orb.listening {
+  animation: voiceListening 1.8s infinite ease-in-out;
+}
+
+@keyframes voiceListening {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(191, 90, 242, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 45px 12px rgba(191, 90, 242, 0.85), inset 0 0 20px rgba(255, 255, 255, 0.8);
+    transform: scale(1.08);
+  }
+}
+
+/* Custom Scrollbar for Liquid Crystal aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* Leaflet Dark Customization */
+.leaflet-container {
+  background-color: #071018 !important;
+  font-family: inherit !important;
+}
+
+.leaflet-control-zoom {
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  background: rgba(11, 23, 35, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.leaflet-control-zoom-in, .leaflet-control-zoom-out {
+  background-color: transparent !important;
+  color: #F7FAFC !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(7, 16, 24, 0.7) !important;
+  color: #718092 !important;
+  backdrop-filter: blur(8px) !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #0A84FF !important;
+}
