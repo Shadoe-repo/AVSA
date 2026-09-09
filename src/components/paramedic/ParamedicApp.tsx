@@ -81,7 +81,7 @@ export const ParamedicApp: React.FC = () => {
       {/* Top Header Bar */}
       <header className="sticky top-0 z-30 px-4 py-3 bg-[#071018]/85 backdrop-blur-crystal border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/asva_logo.png" alt="ASVA Logo" className="w-9 h-9 rounded-xl object-cover shadow-md shadow-blue-500/20" />
+          <img src="/asva_logo.svg" alt="ASVA Logo" className="w-9 h-9 rounded-xl object-cover shadow-md shadow-blue-500/20" />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm tracking-wide text-white">ASVA</span>
