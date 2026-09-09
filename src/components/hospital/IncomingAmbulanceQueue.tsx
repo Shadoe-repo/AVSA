@@ -56,8 +56,8 @@ export const IncomingAmbulanceQueue: React.FC<IncomingAmbulanceQueueProps> = ({
                 {/* Top header row: Ambulance ID + Live Badge + Severity */}
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-white tracking-wide">
-                      {emg.ambulanceId}
+                    <span className="text-xs font-bold text-white tracking-wide">
+                      Ambulance {emg.ambulanceId.replace('AMB-', '')}
                     </span>
                     <StatusPill severity={emg.severity} size="sm" isLive={isCritical} />
                   </div>
@@ -73,8 +73,8 @@ export const IncomingAmbulanceQueue: React.FC<IncomingAmbulanceQueueProps> = ({
                   <span className="text-slate-300 font-semibold">
                     {emg.emergencyType} Emergency
                   </span>
-                  <span className="font-mono text-[11px] text-slate-400">
-                    {emg.emergencyId}
+                  <span className="text-[11px] text-slate-400">
+                    Case {emg.emergencyId.replace('EMG-', '')}
                   </span>
                 </div>
 

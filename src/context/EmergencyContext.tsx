@@ -66,9 +66,37 @@ const EmergencyContext = createContext<EmergencyContextType | null>(null);
 const STORAGE_KEY_CASES = 'asva_cases_v2';
 const STORAGE_KEY_VITALS = 'asva_vitals_v2';
 const STORAGE_KEY_REPORTS = 'asva_reports_v2';
+const STORAGE_KEY_EVENTS = 'asva_realtime_events_fallback';
+
+const getSafeStorageValue = (key: string) => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setSafeStorageValue = (key: string, value: string) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Ignore storage restrictions in private or restricted browser modes.
+  }
+};
+
+const removeSafeStorageValue = (key: string) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore storage restrictions in private or restricted browser modes.
+  }
+};
 
 export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Cross-tab real-time communication channel
+  // Cross-tab real-time communication channel with browser-safe fallback
   const broadcastRef = useRef<BroadcastChannel | null>(null);
 
   // Active paramedic ambulance (AMB-1047 as per specification)
@@ -79,7 +107,7 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Emergency state
   const [emergencies, setEmergencies] = useState<EmergencyCase[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_CASES);
+      const saved = getSafeStorageValue(STORAGE_KEY_CASES);
       return saved ? JSON.parse(saved) : INITIAL_EMERGENCIES;
     } catch {
       return INITIAL_EMERGENCIES;
@@ -88,7 +116,7 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const [vitalsMap, setVitalsMap] = useState<Record<string, VitalsRecord[]>>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_VITALS);
+      const saved = getSafeStorageValue(STORAGE_KEY_VITALS);
       return saved ? JSON.parse(saved) : INITIAL_VITALS;
     } catch {
       return INITIAL_VITALS;
@@ -97,7 +125,7 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const [reportsMap, setReportsMap] = useState<Record<string, MedicalReport[]>>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_REPORTS);
+      const saved = getSafeStorageValue(STORAGE_KEY_REPORTS);
       return saved ? JSON.parse(saved) : INITIAL_REPORTS;
     } catch {
       return INITIAL_REPORTS;
@@ -119,55 +147,85 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Sync to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_CASES, JSON.stringify(emergencies));
-      localStorage.setItem(STORAGE_KEY_VITALS, JSON.stringify(vitalsMap));
-      localStorage.setItem(STORAGE_KEY_REPORTS, JSON.stringify(reportsMap));
+      setSafeStorageValue(STORAGE_KEY_CASES, JSON.stringify(emergencies));
+      setSafeStorageValue(STORAGE_KEY_VITALS, JSON.stringify(vitalsMap));
+      setSafeStorageValue(STORAGE_KEY_REPORTS, JSON.stringify(reportsMap));
     } catch (e) {
       console.error("Local storage error:", e);
     }
   }, [emergencies, vitalsMap, reportsMap]);
 
-  // Setup BroadcastChannel for real-time cross-tab updates
+  const applyRealtimeUpdate = (type: string, payload: any) => {
+    if (type === 'EMERGENCY_UPDATED') {
+      setEmergencies(prev => {
+        const index = prev.findIndex(c => c.emergencyId === payload.emergencyId);
+        if (index >= 0) {
+          const updated = [...prev];
+          updated[index] = payload;
+          return updated;
+        }
+        return [payload, ...prev];
+      });
+    } else if (type === 'VITALS_ADDED') {
+      setVitalsMap(prev => ({
+        ...prev,
+        [payload.emergencyId]: [...(prev[payload.emergencyId] || []), payload.vital]
+      }));
+    } else if (type === 'REPORT_ADDED') {
+      setReportsMap(prev => ({
+        ...prev,
+        [payload.emergencyId]: [...(prev[payload.emergencyId] || []), payload.report]
+      }));
+    }
+  };
+
+  // Setup BroadcastChannel for real-time cross-tab updates with a safe fallback.
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY_EVENTS || !event.newValue) return;
+      try {
+        const { type, payload } = JSON.parse(event.newValue);
+        applyRealtimeUpdate(type, payload);
+      } catch {
+        // Ignore malformed event payloads.
+      }
+    };
+
     if (typeof BroadcastChannel !== 'undefined') {
       const channel = new BroadcastChannel('asva_realtime_events');
       broadcastRef.current = channel;
 
       channel.onmessage = (event) => {
         const { type, payload } = event.data;
-        if (type === 'EMERGENCY_UPDATED') {
-          setEmergencies(prev => {
-            const index = prev.findIndex(c => c.emergencyId === payload.emergencyId);
-            if (index >= 0) {
-              const updated = [...prev];
-              updated[index] = payload;
-              return updated;
-            }
-            return [payload, ...prev];
-          });
-        } else if (type === 'VITALS_ADDED') {
-          setVitalsMap(prev => ({
-            ...prev,
-            [payload.emergencyId]: [...(prev[payload.emergencyId] || []), payload.vital]
-          }));
-        } else if (type === 'REPORT_ADDED') {
-          setReportsMap(prev => ({
-            ...prev,
-            [payload.emergencyId]: [...(prev[payload.emergencyId] || []), payload.report]
-          }));
-        }
+        applyRealtimeUpdate(type, payload);
       };
+
+      window.addEventListener('storage', handleStorage);
 
       return () => {
         channel.close();
+        window.removeEventListener('storage', handleStorage);
       };
     }
+
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   // Broadcast helper
   const notifyPeers = (type: string, payload: any) => {
     if (broadcastRef.current) {
       broadcastRef.current.postMessage({ type, payload });
+    }
+
+    try {
+      setSafeStorageValue(STORAGE_KEY_EVENTS, JSON.stringify({ type, payload, timestamp: Date.now() }));
+    } catch {
+      // Ignore write restrictions.
     }
   };
 
@@ -353,9 +411,9 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setReportsMap(INITIAL_REPORTS);
     setIsSimulatingMovement(false);
     setSimulationStep(0);
-    localStorage.removeItem(STORAGE_KEY_CASES);
-    localStorage.removeItem(STORAGE_KEY_VITALS);
-    localStorage.removeItem(STORAGE_KEY_REPORTS);
+    removeSafeStorageValue(STORAGE_KEY_CASES);
+    removeSafeStorageValue(STORAGE_KEY_VITALS);
+    removeSafeStorageValue(STORAGE_KEY_REPORTS);
   };
 
   // Ambulance Movement Simulation along route with live geofencing (functional update to prevent stale closures)

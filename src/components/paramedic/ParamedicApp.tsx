@@ -172,8 +172,8 @@ export const ParamedicApp: React.FC = () => {
                   <div className={`w-3 h-3 rounded-full ${isCritical ? 'bg-red-500 animate-ping' : 'bg-blue-500'}`} />
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-bold text-white tracking-wider">
-                        {activeEmergency.emergencyId}
+                      <span className="text-sm font-bold text-white tracking-wide">
+                        Case {activeEmergency.emergencyId.replace('EMG-', '')}
                       </span>
                       <StatusPill severity={activeEmergency.severity} isLive size="sm" />
                       <StatusPill status={activeEmergency.status} size="sm" />

@@ -40,12 +40,13 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
       center: [22.5650, 88.3800],
       zoom: 13,
       zoomControl: true,
-      attributionControl: false
+      attributionControl: true
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      subdomains: 'abcd'
+      attribution: '&copy; OpenStreetMap contributors',
+      subdomains: 'abc'
     }).addTo(map);
 
     mapInstanceRef.current = map;

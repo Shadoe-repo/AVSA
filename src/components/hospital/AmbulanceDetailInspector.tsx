@@ -49,12 +49,12 @@ export const AmbulanceDetailInspector: React.FC = () => {
         <div className="flex items-center justify-between gap-3 mb-2">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-base font-bold text-white tracking-wider">
-                {selectedCase.ambulanceId}
+              <span className="text-base font-bold text-white tracking-wide">
+                Ambulance {selectedCase.ambulanceId.replace('AMB-', '')}
               </span>
               <span className="text-slate-500">•</span>
-              <span className="font-mono text-xs text-slate-300">
-                {selectedCase.emergencyId}
+              <span className="text-xs text-slate-300">
+                Case {selectedCase.emergencyId.replace('EMG-', '')}
               </span>
             </div>
             <div className="text-xs text-slate-400 mt-0.5">
