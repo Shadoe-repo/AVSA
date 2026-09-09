@@ -76,7 +76,12 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    hospitals.forEach((hospital: Hospital) => {
+    const routeOnly = Boolean(focusAmbulanceId && activeEmergency?.hospitalId);
+    const visibleHospitals = routeOnly
+      ? hospitals.filter(hospital => hospital.hospitalId === activeEmergency?.hospitalId)
+      : hospitals;
+
+    visibleHospitals.forEach((hospital: Hospital) => {
       const key = `hosp_${hospital.hospitalId}`;
       const isSelected = selectedHospital?.hospitalId === hospital.hospitalId;
 
@@ -119,12 +124,24 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
     });
 
     // Draw geofence circle around selected hospital (250m & 1.5km)
-    if (selectedHospital) {
+    const geofenceHospital = routeOnly
+      ? visibleHospitals[0]
+      : selectedHospital;
+
+    const visibleHospitalKeys = new Set(visibleHospitals.map(hospital => `hosp_${hospital.hospitalId}`));
+    Object.keys(markersRef.current).forEach(key => {
+      if (key.startsWith('hosp_') && !visibleHospitalKeys.has(key)) {
+        markersRef.current[key].remove();
+        delete markersRef.current[key];
+      }
+    });
+
+    if (geofenceHospital) {
       if (geofenceCircleRef.current) {
         geofenceCircleRef.current.remove();
       }
       geofenceCircleRef.current = L.circle(
-        [selectedHospital.coordinates.latitude, selectedHospital.coordinates.longitude],
+        [geofenceHospital.coordinates.latitude, geofenceHospital.coordinates.longitude],
         {
           radius: 1500,
           color: '#0A84FF',
@@ -135,7 +152,7 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
         }
       ).addTo(map);
     }
-  }, [hospitals, selectedHospital?.hospitalId]);
+  }, [hospitals, selectedHospital?.hospitalId, activeEmergency?.hospitalId, focusAmbulanceId]);
 
   // Update Ambulance Markers
   useEffect(() => {
@@ -156,8 +173,12 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
       }
     });
 
+    const visibleEmergencies = focusAmbulanceId && activeEmergency?.hospitalId
+      ? allRelevantEmergencies.filter(e => e.emergencyId === activeEmergency.emergencyId)
+      : allRelevantEmergencies;
+
     // Prune stale / completed markers from map
-    const activeKeys = new Set(allRelevantEmergencies.map(e => `amb_${e.emergencyId}`));
+    const activeKeys = new Set(visibleEmergencies.map(e => `amb_${e.emergencyId}`));
     Object.keys(markersRef.current).forEach(k => {
       if (k.startsWith('amb_') && !activeKeys.has(k)) {
         markersRef.current[k].remove();
@@ -165,7 +186,7 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
       }
     });
 
-    allRelevantEmergencies.forEach(emg => {
+    visibleEmergencies.forEach(emg => {
       const key = `amb_${emg.emergencyId}`;
       const isCritical = emg.severity === 'CRITICAL';
       const isFocused = emg.ambulanceId === focusAmbulanceId || emg.emergencyId === activeEmergency?.emergencyId;
