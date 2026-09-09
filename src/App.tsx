@@ -1,22 +1,35 @@
-import React, { useState } from 'react';
-import { EmergencyProvider } from './context/EmergencyContext';
+import React, { useState, useEffect } from 'react';
+import { EmergencyProvider, useEmergency } from './context/EmergencyContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ParamedicApp } from './components/paramedic/ParamedicApp';
 import { HospitalDashboard } from './components/hospital/HospitalDashboard';
 import { TrafficCorridorView } from './components/traffic/TrafficCorridorView';
 import { SnowflakeAnalyticsModal } from './components/analytics/SnowflakeAnalyticsModal';
-import { 
-  Ambulance, 
-  Building2, 
-  TrafficCone, 
-  Database, 
-  Sparkles,
-  Layers
+import {
+  Ambulance,
+  Building2,
+  TrafficCone,
+  Database,
+  Sun,
+  MoonStar,
+  Play,
 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { activeRole, setActiveRole } = useAuth();
+  const { demoMode, setDemoMode } = useEmergency();
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('asva-theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('asva-theme', theme);
+  }, [theme]);
 
   return (
     <div className="relative min-h-screen bg-asva-bg">
@@ -64,6 +77,26 @@ const AppContent: React.FC = () => {
         </button>
 
         <div className="w-[1px] h-4 bg-white/20 mx-1" />
+
+        <button
+          onClick={() => setDemoMode(!demoMode)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
+            demoMode ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'text-slate-300 hover:text-white hover:bg-white/5'
+          }`}
+          title="Toggle demo mode"
+        >
+          <Play className="w-3.5 h-3.5" />
+          <span>Demo</span>
+        </button>
+
+        <button
+          onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+          className="flex items-center justify-center w-8 h-8 rounded-full text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200"
+          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <MoonStar className="w-3.5 h-3.5" />}
+        </button>
 
         <button
           onClick={() => setShowAnalyticsModal(true)}

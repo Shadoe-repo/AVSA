@@ -8,7 +8,8 @@ import {
   Coordinates,
   EmergencyType,
   EmergencySeverity,
-  EmergencyStatus
+  EmergencyStatus,
+  ReportType
 } from '../types';
 import { 
   INITIAL_HOSPITALS, 
@@ -57,6 +58,12 @@ interface EmergencyContextType {
   setSelectedHospitalId: (id: string) => void;
   setSelectedCaseId: (id: string | null) => void;
 
+  // Demo Mode
+  demoMode: boolean;
+  setDemoMode: (enabled: boolean) => void;
+  moveDemoAmbulanceTo: (position: 'START' | 'MID' | 'DESTINATION') => void;
+  addDemoReport: (reportType?: ReportType) => void;
+
   // Global Helpers
   connectionStatus: 'ONLINE_SYNC' | 'LOCAL_ACTIVE';
 }
@@ -103,6 +110,7 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [activeAmbulance] = useState<Ambulance>(INITIAL_AMBULANCES[0]);
   const [hospitals] = useState<Hospital[]>(INITIAL_HOSPITALS);
   const [selectedHospitalId, setSelectedHospitalId] = useState<string>('HOSP-021');
+  const [demoMode, setDemoMode] = useState<boolean>(true);
 
   // Emergency state
   const [emergencies, setEmergencies] = useState<EmergencyCase[]>(() => {
@@ -322,6 +330,118 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setEmergencies(prev => prev.map(c => c.emergencyId === updated.emergencyId ? updated : c));
     snowflakeWarehouse.syncEmergency(updated);
     notifyPeers('EMERGENCY_UPDATED', updated);
+  };
+
+  const moveDemoAmbulanceTo = (position: 'START' | 'MID' | 'DESTINATION') => {
+    if (!activeEmergency || !routeCoordinates.length) return;
+
+    let nextLocation = activeEmergency.currentLocation;
+    let nextStatus: EmergencyStatus = activeEmergency.status;
+    let nextEta = activeEmergency.etaSeconds;
+
+    if (position === 'START') {
+      nextLocation = routeCoordinates[0];
+      nextStatus = 'EN_ROUTE';
+      nextEta = Math.max(1, Math.ceil(calculateDistanceKm(routeCoordinates[0], activeEmergency.destinationHospital?.coordinates || activeEmergency.currentLocation) * 6));
+    } else if (position === 'MID') {
+      const midIndex = Math.max(1, Math.floor(routeCoordinates.length / 2));
+      nextLocation = routeCoordinates[midIndex];
+      nextStatus = 'APPROACHING';
+      nextEta = Math.max(2, Math.ceil((routeCoordinates.length - midIndex) * 15));
+    } else if (position === 'DESTINATION') {
+      const target = activeEmergency.destinationHospital?.coordinates ||
+        hospitals.find(h => h.hospitalId === activeEmergency.hospitalId)?.coordinates ||
+        activeEmergency.currentLocation;
+      nextLocation = target;
+      nextStatus = 'ARRIVED';
+      nextEta = 0;
+    }
+
+    const updated: EmergencyCase = {
+      ...activeEmergency,
+      currentLocation: nextLocation,
+      status: nextStatus,
+      etaSeconds: nextEta,
+      updatedAt: new Date().toISOString(),
+      arrivedAt: nextStatus === 'ARRIVED' ? (activeEmergency.arrivedAt || new Date().toISOString()) : activeEmergency.arrivedAt
+    };
+
+    setEmergencies(prev => prev.map(c => c.emergencyId === updated.emergencyId ? updated : c));
+    snowflakeWarehouse.syncEmergency(updated);
+    notifyPeers('EMERGENCY_UPDATED', updated);
+  };
+
+  const addDemoReport = (reportType: ReportType = 'ECG') => {
+    if (!activeEmergency) return;
+
+    const reportTemplates: Record<ReportType, { title: string; cloudinaryPublicId: string; fileType: MedicalReport['fileType']; notes: string; cloudinaryUrl: string }> = {
+      ECG: {
+        title: 'Live ECG Rhythm Strip',
+        cloudinaryPublicId: 'demo/ecg-demo-strip',
+        fileType: 'image/png',
+        notes: 'Demo ECG generated in live presentation mode.',
+        cloudinaryUrl: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1200&q=80'
+      },
+      XRAY: {
+        title: 'Chest X-ray Overview',
+        cloudinaryPublicId: 'demo/xray-demo',
+        fileType: 'image/jpeg',
+        notes: 'Sample radiograph for demo handoff review.',
+        cloudinaryUrl: 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1200&q=80'
+      },
+      BLOOD_TEST: {
+        title: 'CBC Lab Panel',
+        cloudinaryPublicId: 'demo/blood-demo-panel',
+        fileType: 'application/pdf',
+        notes: 'Synthetic blood work sheet for demo mode.',
+        cloudinaryUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+      },
+      CT_MRI: {
+        title: 'CT Brain Summary',
+        cloudinaryPublicId: 'demo/ct-demo',
+        fileType: 'image/jpeg',
+        notes: 'Demo imaging screenshot for presentation.',
+        cloudinaryUrl: 'https://images.unsplash.com/photo-1538108149393-fbbd81895977?auto=format&fit=crop&w=1200&q=80'
+      },
+      PRESCRIPTION: {
+        title: 'Medication Summary',
+        cloudinaryPublicId: 'demo/prescription-demo',
+        fileType: 'application/pdf',
+        notes: 'Medication chart generated for demonstration.',
+        cloudinaryUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+      },
+      OTHER: {
+        title: 'Field Observation Snapshot',
+        cloudinaryPublicId: 'demo/observation-demo',
+        fileType: 'image/png',
+        notes: 'General diagnostic snapshot used in demo flow.',
+        cloudinaryUrl: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80'
+      }
+    };
+
+    const template = reportTemplates[reportType];
+    const report: MedicalReport = {
+      reportId: `RPT-${Date.now().toString().slice(-6)}`,
+      emergencyId: activeEmergency.emergencyId,
+      ambulanceId: activeEmergency.ambulanceId,
+      reportType,
+      title: template.title,
+      cloudinaryPublicId: template.cloudinaryPublicId,
+      cloudinaryUrl: template.cloudinaryUrl,
+      fileType: template.fileType,
+      fileSize: '1.2 MB',
+      uploadedBy: 'Demo Mode',
+      uploadedAt: new Date().toISOString(),
+      notes: template.notes
+    };
+
+    setReportsMap(prev => ({
+      ...prev,
+      [activeEmergency.emergencyId]: [...(prev[activeEmergency.emergencyId] || []), report]
+    }));
+
+    snowflakeWarehouse.syncReport(report);
+    notifyPeers('REPORT_ADDED', { emergencyId: activeEmergency.emergencyId, report });
   };
 
   // In-Transit Treatment update (preserves state immutability)
@@ -568,6 +688,11 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         setSelectedHospitalId,
         setSelectedCaseId,
+
+        demoMode,
+        setDemoMode,
+        moveDemoAmbulanceTo,
+        addDemoReport,
 
         connectionStatus: 'ONLINE_SYNC'
       }}
