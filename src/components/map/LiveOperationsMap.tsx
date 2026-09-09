@@ -82,14 +82,14 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
 
       const hospitalIconHtml = `
         <div class="relative flex items-center justify-center">
-          <div class="w-10 h-10 rounded-2xl flex items-center justify-center border ${
+          <div class="map-hospital-marker w-10 h-10 rounded-2xl flex items-center justify-center border ${
             isSelected 
               ? 'bg-blue-600/90 border-blue-400 shadow-lg shadow-blue-500/50' 
               : 'bg-[#0f2233]/90 border-white/20'
           } backdrop-blur-md transition-transform duration-200 hover:scale-110">
             <span class="text-white text-base font-bold">H</span>
           </div>
-          <div class="absolute -bottom-5 px-2 py-0.5 rounded-full bg-slate-900/90 border border-white/20 text-[10px] text-slate-200 font-medium whitespace-nowrap shadow-md">
+          <div class="map-marker-label absolute -bottom-5 px-2 py-0.5 rounded-full bg-slate-900/90 border border-white/20 text-[10px] text-slate-200 font-medium whitespace-nowrap shadow-md">
             ${hospital.availableBeds} beds
           </div>
         </div>
@@ -106,10 +106,10 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
         const marker = L.marker([hospital.coordinates.latitude, hospital.coordinates.longitude], { icon: customIcon })
           .addTo(map)
           .bindPopup(`
-            <div style="background:#0b1723; color:#F7FAFC; padding:8px; border-radius:12px; border:1px solid rgba(255,255,255,0.2);">
+            <div style="background:var(--map-popup-bg); color:var(--map-popup-text); padding:8px; border-radius:12px; border:1px solid var(--border);">
               <b style="font-size:14px; display:block; margin-bottom:4px;">${hospital.name}</b>
-              <div style="color:#AAB6C4; font-size:12px; margin-bottom:4px;">Available ER Beds: <span style="color:#30D158; font-weight:bold;">${hospital.availableBeds}</span> (ICU: ${hospital.icuBeds})</div>
-              <div style="color:#718092; font-size:11px;">Status: ${hospital.emergencyStatus}</div>
+              <div style="color:var(--map-popup-secondary); font-size:12px; margin-bottom:4px;">Available ER Beds: <span style="color:#30D158; font-weight:bold;">${hospital.availableBeds}</span> (ICU: ${hospital.icuBeds})</div>
+              <div style="color:var(--text-muted); font-size:11px;">Status: ${hospital.emergencyStatus}</div>
             </div>
           `);
         markersRef.current[key] = marker;
@@ -188,7 +188,7 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
               <circle cx="7" cy="18" r="2"/>
             </svg>
           </div>
-          <div class="mt-1 px-2 py-0.5 rounded-full bg-slate-900/90 border border-white/20 text-[10px] text-white font-bold whitespace-nowrap shadow-md">
+          <div class="map-marker-label mt-1 px-2 py-0.5 rounded-full bg-slate-900/90 border border-white/20 text-[10px] text-white font-bold whitespace-nowrap shadow-md">
             ${emg.ambulanceId} • ${etaMin}m
           </div>
         </div>

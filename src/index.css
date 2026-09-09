@@ -46,6 +46,18 @@ html[data-theme='light'] .map-ambulance-marker {
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2) !important;
 }
 
+html[data-theme='light'] .map-marker-label {
+  background-color: var(--panel) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme='light'] .map-hospital-marker,
+html[data-theme='light'] [class~="bg-[#0f2233]/90"] {
+  background-color: var(--panel) !important;
+  color: var(--text-primary) !important;
+}
+
 html[data-theme='light'] [class~="border-white/10"],
 html[data-theme='light'] [class~="border-white/20"] {
   border-color: var(--border) !important;
