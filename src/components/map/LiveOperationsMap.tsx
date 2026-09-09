@@ -20,6 +20,8 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
   const polylineRef = useRef<L.Polyline | null>(null);
   const geofenceCircleRef = useRef<L.Circle | null>(null);
+  const routeStartMarkerRef = useRef<L.Marker | null>(null);
+  const routeEndMarkerRef = useRef<L.Marker | null>(null);
 
   const {
     hospitals,
@@ -174,10 +176,10 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
       const ambulanceIconHtml = `
         <div class="relative flex flex-col items-center justify-center cursor-pointer group">
           ${isCritical ? '<div class="absolute w-12 h-12 rounded-full animate-ping opacity-50" style="background-color:' + markerColor + '"></div>' : ''}
-          <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 ${
+          <div class="map-ambulance-marker w-10 h-10 rounded-full flex items-center justify-center border-2 ${
             isFocused ? 'scale-110 ring-4 ring-blue-400/40' : ''
           } shadow-xl backdrop-blur-md transition-all duration-300"
-            style="background-color: #071018; border-color: ${markerColor}">
+            style="background-color: var(--map-marker-bg); border-color: ${markerColor}">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${markerColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/>
               <path d="M15 18H9"/>
@@ -203,10 +205,10 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
         const marker = L.marker([emg.currentLocation.latitude, emg.currentLocation.longitude], { icon: customIcon })
           .addTo(map)
           .bindPopup(`
-            <div style="background:#0b1723; color:#F7FAFC; padding:8px; border-radius:12px; border:1px solid rgba(255,255,255,0.2);">
+            <div style="background:var(--map-popup-bg); color:var(--map-popup-text); padding:8px; border-radius:12px; border:1px solid var(--border);">
               <b style="font-size:13px; display:block; margin-bottom:2px;">${emg.ambulanceId} (${emg.emergencyId})</b>
-              <div style="color:#AAB6C4; font-size:11px;">Severity: <strong style="color:${markerColor};">${emg.severity}</strong></div>
-              <div style="color:#718092; font-size:11px;">Status: ${emg.status.replace(/_/g, ' ')} • ETA ~${etaMin}m</div>
+              <div style="color:var(--map-popup-secondary); font-size:11px;">Severity: <strong style="color:${markerColor};">${emg.severity}</strong></div>
+              <div style="color:var(--text-muted); font-size:11px;">Status: ${emg.status.replace(/_/g, ' ')} • ETA ~${etaMin}m</div>
             </div>
           `)
           .on('click', () => {
@@ -232,7 +234,7 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
       ]);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
     }
-  }, [activeEmergency?.emergencyId, activeEmergency?.hospitalId]);
+  }, [activeEmergency?.emergencyId, activeEmergency?.hospitalId, routeCoordinates.length]);
 
   // Update Route Polyline
   useEffect(() => {
@@ -240,7 +242,26 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
     if (!map) return;
 
     if (routeCoordinates.length > 0) {
-      const latLngs = routeCoordinates.map(c => [c.latitude, c.longitude] as [number, number]);
+      const currentLocation = activeEmergency?.currentLocation;
+      let visibleRoute = routeCoordinates;
+
+      if (currentLocation) {
+        let closestIndex = 0;
+        let closestDistance = Number.POSITIVE_INFINITY;
+        routeCoordinates.forEach((point, index) => {
+          const distance = Math.hypot(
+            point.latitude - currentLocation.latitude,
+            point.longitude - currentLocation.longitude
+          );
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = index;
+          }
+        });
+        visibleRoute = [currentLocation, ...routeCoordinates.slice(closestIndex + 1)];
+      }
+
+      const latLngs = visibleRoute.map(c => [c.latitude, c.longitude] as [number, number]);
 
       if (!polylineRef.current) {
         polylineRef.current = L.polyline(latLngs, {
@@ -257,14 +278,62 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
       polylineRef.current.remove();
       polylineRef.current = null;
     }
-  }, [routeCoordinates]);
+  }, [routeCoordinates, activeEmergency?.currentLocation]);
+
+  // Keep labeled route endpoints tied to the live ambulance and destination.
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const targetHospital = activeEmergency?.destinationHospital ||
+      hospitals.find(hospital => hospital.hospitalId === activeEmergency?.hospitalId);
+    const currentLocation = activeEmergency?.currentLocation;
+
+    if (!map || !currentLocation || !targetHospital || routeCoordinates.length === 0) {
+      routeStartMarkerRef.current?.remove();
+      routeEndMarkerRef.current?.remove();
+      routeStartMarkerRef.current = null;
+      routeEndMarkerRef.current = null;
+      return;
+    }
+
+    const createEndpointIcon = (label: string, variant: 'start' | 'end') => L.divIcon({
+      html: `<div class="route-endpoint route-endpoint-${variant}"><span class="route-endpoint-dot"></span><span>${label}</span></div>`,
+      className: 'route-endpoint-wrapper',
+      iconSize: [92, 28],
+      iconAnchor: [12, 14]
+    });
+
+    const startLabel = `FROM ${activeEmergency.ambulanceId}`;
+    const endLabel = `TO ${targetHospital.name}`;
+
+    if (!routeStartMarkerRef.current) {
+      routeStartMarkerRef.current = L.marker(
+        [currentLocation.latitude, currentLocation.longitude],
+        { icon: createEndpointIcon(startLabel, 'start'), zIndexOffset: 900 }
+      ).addTo(map);
+    } else {
+      routeStartMarkerRef.current
+        .setLatLng([currentLocation.latitude, currentLocation.longitude])
+        .setIcon(createEndpointIcon(startLabel, 'start'));
+    }
+
+    if (!routeEndMarkerRef.current) {
+      routeEndMarkerRef.current = L.marker(
+        [targetHospital.coordinates.latitude, targetHospital.coordinates.longitude],
+        { icon: createEndpointIcon(endLabel, 'end'), zIndexOffset: 900 }
+      ).addTo(map);
+    } else {
+      routeEndMarkerRef.current
+        .setLatLng([targetHospital.coordinates.latitude, targetHospital.coordinates.longitude])
+        .setIcon(createEndpointIcon(endLabel, 'end'));
+    }
+  }, [activeEmergency?.ambulanceId, activeEmergency?.currentLocation, activeEmergency?.destinationHospital, activeEmergency?.hospitalId, hospitals, routeCoordinates.length]);
 
   return (
     <div className={`relative ${className} overflow-hidden rounded-card border border-white/10`}>
       <div ref={mapContainerRef} className="h-full w-full z-0" />
       
       {/* Map status overlay badge */}
-      <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/15 text-xs text-slate-300 font-medium">
+      <div className="map-status-overlay absolute top-3 left-3 z-[1000] flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/15 text-xs text-slate-300 font-medium">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         <span>Live Emergency GPS Grid</span>
       </div>

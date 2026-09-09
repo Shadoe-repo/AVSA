@@ -12,6 +12,10 @@
   --surface-strong: rgba(255, 255, 255, 0.10);
   --border: rgba(255, 255, 255, 0.18);
   --shadow: rgba(2, 6, 23, 0.45);
+  --map-marker-bg: #071018;
+  --map-popup-bg: #0b1723;
+  --map-popup-text: #F7FAFC;
+  --map-popup-secondary: #AAB6C4;
   
   --critical: #FF453A;
   --high: #FF9F0A;
@@ -49,6 +53,10 @@ html[data-theme='light'] {
   --glass-fill-modal: rgba(255, 255, 255, 0.92);
   --glass-border: rgba(148, 163, 184, 0.3);
   --glass-highlight: rgba(255, 255, 255, 0.75);
+  --map-marker-bg: #ffffff;
+  --map-popup-bg: #ffffff;
+  --map-popup-text: #0f172a;
+  --map-popup-secondary: #475569;
 }
 
 html, body {

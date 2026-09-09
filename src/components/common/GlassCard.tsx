@@ -21,7 +21,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`${baseClass} ${criticalClass} p-5 text-white ${onClick ? 'cursor-pointer hover:scale-[1.008] transition-transform duration-200' : ''} ${className}`}
+      className={`${baseClass} ${criticalClass} p-5 text-[var(--text-primary)] ${onClick ? 'cursor-pointer hover:scale-[1.008] transition-transform duration-200' : ''} ${className}`}
     >
       {children}
     </div>

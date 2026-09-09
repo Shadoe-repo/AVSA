@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useEmergency } from '../../context/EmergencyContext';
+import appLogo from '../../assets/asva_logo.png';
 import { LiveOperationsMap } from '../map/LiveOperationsMap';
 import { GlassCard } from '../common/GlassCard';
 import { GlassButton } from '../common/GlassButton';
@@ -22,7 +23,7 @@ export const TrafficCorridorView: React.FC = () => {
       {/* Header */}
       <header className="px-4 py-3 bg-[#071018]/90 backdrop-blur-crystal border-b border-white/10 flex items-center justify-between flex-shrink-0 z-20">
         <div className="flex items-center gap-3">
-          <img src="/asva_logo.svg" alt="ASVA" className="w-8 h-8 rounded-xl object-cover" />
+          <img src={appLogo} alt="ASVA" className="w-8 h-8 rounded-full object-cover" />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm text-white">ASVA Traffic Operations Command</span>

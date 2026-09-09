@@ -55,6 +55,30 @@ export function generateRoutePoints(start: Coordinates, dest: Coordinates, numPo
   return points;
 }
 
+export async function fetchRoutePoints(start: Coordinates, dest: Coordinates): Promise<Coordinates[]> {
+  const startPoint = `${start.longitude},${start.latitude}`;
+  const destinationPoint = `${dest.longitude},${dest.latitude}`;
+  const url = `https://router.project-osrm.org/route/v1/driving/${startPoint};${destinationPoint}?overview=full&geometries=geojson`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Routing request failed: ${response.status}`);
+
+    const data: {
+      routes?: Array<{ geometry?: { coordinates?: Array<[number, number]> } }>;
+    } = await response.json();
+    const coordinates = data.routes?.[0]?.geometry?.coordinates;
+
+    if (!coordinates || coordinates.length < 2) {
+      throw new Error('Routing response did not include a usable geometry');
+    }
+
+    return coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
+  } catch {
+    return generateRoutePoints(start, dest, 30);
+  }
+}
+
 export function checkHospitalGeofence(currentCoord: Coordinates, hospitalCoord: Coordinates): 'ARRIVED' | 'APPROACHING' | 'EN_ROUTE' {
   const distKm = calculateDistanceKm(currentCoord, hospitalCoord);
   if (distKm <= 0.25) {

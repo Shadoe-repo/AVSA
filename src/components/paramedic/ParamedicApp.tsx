@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useEmergency } from '../../context/EmergencyContext';
+import appLogo from '../../assets/asva_logo.png';
 import { GlassCard } from '../common/GlassCard';
 import { GlassButton } from '../common/GlassButton';
 import { StatusPill } from '../common/StatusPill';
@@ -41,10 +42,6 @@ export const ParamedicApp: React.FC = () => {
     toggleSimulation,
     isSimulatingMovement,
     resetEmergency,
-    demoMode,
-    setDemoMode,
-    moveDemoAmbulanceTo,
-    addDemoReport
   } = useEmergency();
 
   const [showHospitalModal, setShowHospitalModal] = useState(false);
@@ -85,7 +82,7 @@ export const ParamedicApp: React.FC = () => {
       {/* Top Header Bar */}
       <header className="sticky top-0 z-30 px-4 py-3 bg-[#071018]/85 backdrop-blur-crystal border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/asva_logo.svg" alt="ASVA Logo" className="w-9 h-9 rounded-xl object-cover shadow-md shadow-blue-500/20" />
+          <img src={appLogo} alt="ASVA Logo" className="w-9 h-9 rounded-full object-cover shadow-md shadow-blue-500/20" />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm tracking-wide text-white">ASVA</span>
@@ -123,45 +120,6 @@ export const ParamedicApp: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="p-4 max-w-4xl mx-auto w-full space-y-4 flex-1">
-        {demoMode && (
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="text-[10px] uppercase tracking-wider font-semibold text-emerald-300">Demo mode</div>
-                <div className="text-sm font-medium text-white">Use the controls below to simulate hospital changes, route progression, and test files.</div>
-              </div>
-              <button
-                onClick={() => setDemoMode(false)}
-                className="px-3 py-1.5 rounded-xl border border-emerald-300/40 bg-emerald-500/20 text-emerald-200 text-xs font-semibold"
-              >
-                Exit demo
-              </button>
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <select
-                value={activeEmergency?.hospitalId || 'HOSP-021'}
-                onChange={(e) => {
-                  selectHospital(e.target.value);
-                }}
-                className="rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs text-white outline-none"
-              >
-                {hospitals.map((hospital) => (
-                  <option key={hospital.hospitalId} value={hospital.hospitalId} className="bg-slate-900 text-white">
-                    {hospital.name}
-                  </option>
-                ))}
-              </select>
-
-              <button onClick={() => moveDemoAmbulanceTo('START')} className="rounded-xl bg-slate-800 px-3 py-2 text-xs text-white">Start</button>
-              <button onClick={() => moveDemoAmbulanceTo('MID')} className="rounded-xl bg-slate-800 px-3 py-2 text-xs text-white">Approaching</button>
-              <button onClick={() => moveDemoAmbulanceTo('DESTINATION')} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs text-white">At hospital</button>
-              <button onClick={() => addDemoReport('ECG')} className="rounded-xl bg-blue-600 px-3 py-2 text-xs text-white">Add ECG</button>
-              <button onClick={() => addDemoReport('XRAY')} className="rounded-xl bg-violet-600 px-3 py-2 text-xs text-white">Add X-ray</button>
-            </div>
-          </div>
-        )}
-
         {/* If NO active emergency: Show Standby / 1-Tap Emergency Trigger */}
         {!activeEmergency ? (
           <div className="py-8 space-y-6">

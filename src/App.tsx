@@ -12,12 +12,10 @@ import {
   Database,
   Sun,
   MoonStar,
-  Play,
 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { activeRole, setActiveRole } = useAuth();
-  const { demoMode, setDemoMode } = useEmergency();
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('asva-theme');
@@ -74,19 +72,6 @@ const AppContent: React.FC = () => {
         >
           <TrafficCone className="w-3.5 h-3.5" />
           <span>Traffic</span>
-        </button>
-
-        <div className="w-[1px] h-4 bg-white/20 mx-1" />
-
-        <button
-          onClick={() => setDemoMode(!demoMode)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
-            demoMode ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'text-slate-300 hover:text-white hover:bg-white/5'
-          }`}
-          title="Toggle demo mode"
-        >
-          <Play className="w-3.5 h-3.5" />
-          <span>Demo</span>
         </button>
 
         <button

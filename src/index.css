@@ -12,3 +12,126 @@
   background-color: var(--bg);
   position: relative;
 }
+
+/* Literal dark utility classes are used by the operational views. Keep them
+   readable when the user switches the shared theme variables to light. */
+html[data-theme='light'] .bg-asva-bg,
+html[data-theme='light'] [class~="bg-[#071018]/85"],
+html[data-theme='light'] [class~="bg-[#071018]/90"],
+html[data-theme='light'] [class~="bg-[#08131d]/90"] {
+  background-color: var(--bg) !important;
+}
+
+html[data-theme='light'] [class~="bg-white/5"] {
+  background-color: var(--surface) !important;
+}
+
+html[data-theme='light'] [class~="bg-white/10"] {
+  background-color: var(--surface-strong) !important;
+}
+
+html[data-theme='light'] [class~="bg-slate-950/60"],
+html[data-theme='light'] [class~="bg-slate-800"] {
+  background-color: var(--surface-strong) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme='light'] .map-status-overlay {
+  background-color: var(--panel) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme='light'] .map-ambulance-marker {
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2) !important;
+}
+
+html[data-theme='light'] [class~="border-white/10"],
+html[data-theme='light'] [class~="border-white/20"] {
+  border-color: var(--border) !important;
+}
+
+html[data-theme='light'] .text-white,
+html[data-theme='light'] .text-slate-200,
+html[data-theme='light'] .text-slate-300,
+html[data-theme='light'] .text-slate-400 {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme='light'] .text-slate-500,
+html[data-theme='light'] .text-slate-600 {
+  color: var(--text-secondary) !important;
+}
+
+html[data-theme='light'] .text-emerald-200,
+html[data-theme='light'] .text-emerald-300 {
+  color: #047857 !important;
+}
+
+html[data-theme='light'] button.text-white,
+html[data-theme='light'] button .text-white {
+  color: #fff !important;
+}
+
+html[data-theme='light'] button[class~="bg-slate-800"] {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme='light'] .leaflet-container {
+  background-color: var(--bg) !important;
+}
+
+html[data-theme='light'] .leaflet-control-zoom {
+  background: var(--panel) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme='light'] .leaflet-control-zoom-in,
+html[data-theme='light'] .leaflet-control-zoom-out {
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme='light'] .leaflet-control-attribution {
+  background: var(--panel) !important;
+  color: var(--text-muted) !important;
+}
+
+.route-endpoint-wrapper {
+  background: transparent;
+  border: 0;
+}
+
+.route-endpoint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  max-width: 190px;
+  padding: 5px 8px 5px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(2, 6, 23, 0.35);
+}
+
+.route-endpoint-start {
+  background: #047857;
+}
+
+.route-endpoint-end {
+  background: #dc2626;
+}
+
+.route-endpoint-dot {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+}
