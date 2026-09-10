@@ -26,20 +26,20 @@ export const TrafficCorridorView: React.FC = () => {
           <img src={appLogo} alt="ASVA" className="w-8 h-8 rounded-full object-cover" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-white">ASVA Traffic Operations Command</span>
+              <span className="font-bold text-sm text-white">ASVA Traffic Coordination</span>
               <span className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-300 text-[10px] font-bold uppercase">
-                Green Corridor System
+                Signal Priority Network
               </span>
             </div>
             <div className="text-[11px] text-slate-400">
-              Kolkata Traffic Police Emergency Dispatch Grid
+              Kolkata live mobility zone
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 text-xs text-slate-300 bg-white/5 border border-white/10 px-3 py-1.5 rounded-2xl">
           <ShieldAlert className="w-4 h-4 text-emerald-400" />
-          <span>Strict HIPAA Privacy Filter Active (Zero Clinical Data Streamed)</span>
+          <span>Protected clinical data · operational status only</span>
         </div>
       </header>
 

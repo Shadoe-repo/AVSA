@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { useEmergency } from '../../context/EmergencyContext';
 import { Hospital, EmergencyCase } from '../../types';
+import { findNearbyHospitals } from '../../services/nearbyHospitalService';
 
 interface LiveOperationsMapProps {
   interactive?: boolean;
@@ -9,6 +10,21 @@ interface LiveOperationsMapProps {
   className?: string;
   focusAmbulanceId?: string;
 }
+
+type DeviceLocationStatus = 'idle' | 'locating' | 'ready' | 'denied' | 'unavailable';
+type NearbyHospitalStatus = 'idle' | 'loading' | 'ready' | 'unavailable';
+
+const escapePopupText = (value: string) => {
+  const entities: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  };
+
+  return value.replace(/[&<>'"]/g, (character) => entities[character] || character);
+};
 
 export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
   onSelectCase,
@@ -22,6 +38,12 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
   const geofenceCircleRef = useRef<L.Circle | null>(null);
   const routeStartMarkerRef = useRef<L.Marker | null>(null);
   const routeEndMarkerRef = useRef<L.Marker | null>(null);
+  const deviceLocationMarkerRef = useRef<L.Marker | null>(null);
+  const nearbyHospitalLayerRef = useRef<L.LayerGroup | null>(null);
+  const [deviceLocation, setDeviceLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [deviceLocationStatus, setDeviceLocationStatus] = useState<DeviceLocationStatus>('idle');
+  const [nearbyHospitalStatus, setNearbyHospitalStatus] = useState<NearbyHospitalStatus>('idle');
+  const [nearbyHospitalCount, setNearbyHospitalCount] = useState(0);
 
   const {
     hospitals,
@@ -70,6 +92,138 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
       mapInstanceRef.current = null;
     };
   }, []);
+
+  const requestDeviceLocation = useCallback(() => {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+      setDeviceLocationStatus('unavailable');
+      return;
+    }
+
+    setDeviceLocationStatus('locating');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const currentLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+
+        setDeviceLocation(currentLocation);
+        setDeviceLocationStatus('ready');
+        mapInstanceRef.current?.flyTo(
+          [currentLocation.latitude, currentLocation.longitude],
+          13,
+          { animate: true, duration: 0.8 }
+        );
+      },
+      (error) => {
+        setDeviceLocationStatus(
+          error.code === error.PERMISSION_DENIED ? 'denied' : 'unavailable'
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
+  }, []);
+
+  // Do not trigger a permission prompt during a demo. If location access was
+  // approved earlier, refresh the marker and nearby hospitals automatically.
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation || !navigator.permissions) {
+      return;
+    }
+
+    let isCurrent = true;
+    navigator.permissions.query({ name: 'geolocation' })
+      .then((permission) => {
+        if (isCurrent && permission.state === 'granted') {
+          requestDeviceLocation();
+        }
+      })
+      .catch(() => {
+        // The explicit map control remains available when Permissions API is unsupported.
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [requestDeviceLocation]);
+
+  // Render the browser-provided location separately from the simulated
+  // ambulance stream so operators can distinguish the two positions.
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !deviceLocation) return;
+
+    const icon = L.divIcon({
+      html: '<div class="map-device-location-marker"></div>',
+      className: 'map-device-location-wrapper',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+
+    const coordinates: [number, number] = [deviceLocation.latitude, deviceLocation.longitude];
+    if (!deviceLocationMarkerRef.current) {
+      deviceLocationMarkerRef.current = L.marker(coordinates, { icon, zIndexOffset: 1100 })
+        .addTo(map)
+        .bindPopup('<div style="font-weight:700; color:var(--map-popup-text);">Current device location</div>');
+    } else {
+      deviceLocationMarkerRef.current.setLatLng(coordinates).setIcon(icon);
+    }
+  }, [deviceLocation]);
+
+  // This lookup runs only after the operator has shared a location. It keeps
+  // the static demo hospital network separate from locally mapped hospitals.
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !deviceLocation) return;
+
+    const layer = nearbyHospitalLayerRef.current || L.layerGroup().addTo(map);
+    nearbyHospitalLayerRef.current = layer;
+    const controller = new AbortController();
+    setNearbyHospitalStatus('loading');
+
+    findNearbyHospitals(deviceLocation, controller.signal)
+      .then((nearbyHospitals) => {
+        if (controller.signal.aborted) return;
+
+        layer.clearLayers();
+        nearbyHospitals.forEach((hospital) => {
+          const markerColor = hospital.hasEmergencyService ? '#30D158' : '#0A84FF';
+          L.circleMarker(
+            [hospital.coordinates.latitude, hospital.coordinates.longitude],
+            {
+              radius: 7,
+              color: '#ffffff',
+              weight: 2,
+              fillColor: markerColor,
+              fillOpacity: 1
+            }
+          )
+            .addTo(layer)
+            .bindPopup(`
+              <div style="background:var(--map-popup-bg); color:var(--map-popup-text); padding:8px; border-radius:12px; border:1px solid var(--border);">
+                <b style="font-size:13px; display:block; margin-bottom:3px;">${escapePopupText(hospital.name)}</b>
+                <div style="color:var(--map-popup-secondary); font-size:11px;">${hospital.distanceKm} km from current location</div>
+                <div style="color:${markerColor}; font-size:10px; font-weight:700; margin-top:3px;">${hospital.hasEmergencyService ? 'EMERGENCY SERVICE MAPPED' : 'HOSPITAL MAPPED'}</div>
+              </div>
+            `);
+        });
+
+        setNearbyHospitalCount(nearbyHospitals.length);
+        setNearbyHospitalStatus('ready');
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setNearbyHospitalCount(0);
+          setNearbyHospitalStatus('unavailable');
+        }
+      });
+
+    return () => controller.abort();
+  }, [deviceLocation]);
 
   // Update Hospital Markers & Geofences
   useEffect(() => {
@@ -349,6 +503,31 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
     }
   }, [activeEmergency?.ambulanceId, activeEmergency?.currentLocation, activeEmergency?.destinationHospital, activeEmergency?.hospitalId, hospitals, routeCoordinates.length]);
 
+  const locationContext = deviceLocation
+    ? 'Current device location'
+    : focusAmbulanceId
+      ? `Demo priority route: ${focusAmbulanceId}`
+      : 'Kolkata demo network';
+  const liveSummary = focusAmbulanceId
+    ? 'Live ambulance tracking'
+    : `${allActiveEmergencies.length} active emergency units`;
+  const nearbySummary = nearbyHospitalStatus === 'loading'
+    ? 'Finding nearby hospitals...'
+    : nearbyHospitalStatus === 'ready'
+      ? nearbyHospitalCount > 0
+        ? `${nearbyHospitalCount} nearby hospitals mapped`
+        : 'No mapped hospitals within 15 km'
+      : nearbyHospitalStatus === 'unavailable'
+        ? 'Nearby hospital lookup unavailable'
+        : 'Share your location to map nearby hospitals';
+  const locationAction = deviceLocationStatus === 'locating'
+    ? 'Locating...'
+    : deviceLocation
+      ? 'Refresh location'
+      : deviceLocationStatus === 'denied'
+        ? 'Allow location access'
+        : 'Use current location';
+
   return (
     <div className={`relative ${className} overflow-hidden rounded-card border border-white/10`}>
       <div ref={mapContainerRef} className="h-full w-full z-0" />
@@ -356,7 +535,28 @@ export const LiveOperationsMap: React.FC<LiveOperationsMapProps> = ({
       {/* Map status overlay badge */}
       <div className="map-status-overlay absolute top-3 left-3 z-[1000] flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/15 text-xs text-slate-300 font-medium">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-        <span>Live Emergency GPS Grid</span>
+        <span>{liveSummary}</span>
+      </div>
+
+      <div className="absolute top-3 right-3 z-[1000] w-52 rounded-2xl border border-[color:var(--border)] bg-[var(--panel-strong)] px-3 py-2 shadow-lg backdrop-blur-md">
+        <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-500">Location intelligence</div>
+        <div className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">{locationContext}</div>
+        <div className="mt-1 text-[10px] leading-snug text-[var(--text-secondary)]">{nearbySummary}</div>
+        <button
+          type="button"
+          onClick={requestDeviceLocation}
+          disabled={deviceLocationStatus === 'locating'}
+          className="mt-2 rounded-lg border border-emerald-500/35 bg-emerald-500/15 px-2 py-1 text-[10px] font-bold text-emerald-500 transition-colors hover:bg-emerald-500/25 disabled:cursor-wait disabled:opacity-60"
+        >
+          {locationAction}
+        </button>
+      </div>
+
+      <div className="pointer-events-none absolute bottom-3 right-3 z-[1000] hidden items-center gap-3 rounded-full border border-[color:var(--border)] bg-[var(--panel-strong)] px-3 py-1.5 text-[10px] font-semibold text-[var(--text-secondary)] shadow-lg backdrop-blur-md sm:flex">
+        <span className="flex items-center gap-1.5"><i className="h-1.5 w-4 rounded-full bg-blue-500" /> Live route</span>
+        <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-red-500" /> Emergency unit</span>
+        <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm border-2 border-blue-500" /> Destination</span>
+        {deviceLocation && <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Nearby hospital</span>}
       </div>
     </div>
   );

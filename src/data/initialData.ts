@@ -63,8 +63,8 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
   {
     ambulanceId: 'AMB-1047',
     vehicleNumber: 'WB-02-AK-4421',
-    driverName: 'Rajesh Sen',
-    paramedicName: 'Ananya Roy',
+    driverName: 'Unit 1047 Driver',
+    paramedicName: 'Unit 1047 Paramedic',
     status: 'ON_CALL',
     currentCoordinates: { latitude: 22.5726, longitude: 88.3639 },
     registeredAt: '2026-01-15T08:00:00Z'
@@ -72,8 +72,8 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
   {
     ambulanceId: 'AMB-1082',
     vehicleNumber: 'WB-02-BM-9102',
-    driverName: 'Vikram Das',
-    paramedicName: 'Debabrata Paul',
+    driverName: 'Unit 1082 Driver',
+    paramedicName: 'Unit 1082 Paramedic',
     status: 'ON_CALL',
     currentCoordinates: { latitude: 22.5510, longitude: 88.3750 },
     registeredAt: '2026-02-10T09:30:00Z'
@@ -81,8 +81,8 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
   {
     ambulanceId: 'AMB-1031',
     vehicleNumber: 'WB-02-CX-7789',
-    driverName: 'Sourav Ghosh',
-    paramedicName: 'Priya Mukherjee',
+    driverName: 'Unit 1031 Driver',
+    paramedicName: 'Unit 1031 Paramedic',
     status: 'ON_CALL',
     currentCoordinates: { latitude: 22.5850, longitude: 88.3900 },
     registeredAt: '2026-03-01T11:15:00Z'
@@ -90,8 +90,8 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
   {
     ambulanceId: 'AMB-1090',
     vehicleNumber: 'WB-02-DZ-3310',
-    driverName: 'Amitava Banerjee',
-    paramedicName: 'Sanjay Dutta',
+    driverName: 'Unit 1090 Driver',
+    paramedicName: 'Unit 1090 Paramedic',
     status: 'ON_CALL',
     currentCoordinates: { latitude: 22.5620, longitude: 88.4200 },
     registeredAt: '2026-04-12T14:20:00Z'
@@ -243,7 +243,7 @@ export const INITIAL_REPORTS: Record<string, MedicalReport[]> = {
       cloudinaryUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80',
       fileType: 'image/jpeg',
       fileSize: '1.4 MB',
-      uploadedBy: 'Paramedic Ananya Roy',
+      uploadedBy: 'Paramedic Unit 1047',
       uploadedAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
       notes: 'Anterior wall ST-elevation confirmed in Leads V1-V4 with reciprocal depression in II, III, aVF.'
     }
@@ -259,7 +259,7 @@ export const INITIAL_REPORTS: Record<string, MedicalReport[]> = {
       cloudinaryUrl: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80',
       fileType: 'image/jpeg',
       fileSize: '2.8 MB',
-      uploadedBy: 'Paramedic Debabrata Paul',
+      uploadedBy: 'Paramedic Unit 1082',
       uploadedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
       notes: 'Possible left-sided hemothorax with 4th/5th rib fracture.'
     }

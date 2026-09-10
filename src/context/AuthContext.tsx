@@ -10,25 +10,24 @@ interface AuthContextType {
   logout: () => void;
 }
 
-const DEFAULT_DOCTOR: HospitalUser = {
-  userId: 'usr_doc_991',
-  email: 'dr.chatterjee@apollo-er.med',
-  name: 'Dr. Debanjan Chatterjee, MD',
+const DEFAULT_OPERATOR: HospitalUser = {
+  userId: 'demo_ops_lead',
+  email: 'ops.lead@asva-demo.local',
+  name: 'Operations Lead',
   hospitalId: 'HOSP-021',
-  role: 'ER_CHIEF',
-  avatarUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&q=80'
+  role: 'ER_CHIEF'
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<HospitalUser | null>(DEFAULT_DOCTOR);
+  const [currentUser, setCurrentUser] = useState<HospitalUser | null>(DEFAULT_OPERATOR);
   const [activeRole, setActiveRole] = useState<'PARAMEDIC' | 'HOSPITAL' | 'TRAFFIC' | 'ANALYTICS'>('PARAMEDIC');
 
   const loginWithGoogle = async (hospitalId = 'HOSP-021') => {
-    // Simulates instant secure Google OAuth mapping to authorized hospital profile
+    // Demo secure-session mapping for the selected hospital command centre.
     setCurrentUser({
-      ...DEFAULT_DOCTOR,
+      ...DEFAULT_OPERATOR,
       hospitalId
     });
   };

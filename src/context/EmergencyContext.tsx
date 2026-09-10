@@ -56,6 +56,10 @@ interface EmergencyContextType {
   // Hospital Actions
   setSelectedHospitalId: (id: string) => void;
   setSelectedCaseId: (id: string | null) => void;
+  updateHospitalOperationalData: (
+    hospitalId: string,
+    data: Pick<Hospital, 'availableBeds' | 'icuBeds' | 'emergencyStatus'>
+  ) => void;
 
   // Global Helpers
   connectionStatus: 'ONLINE_SYNC' | 'LOCAL_ACTIVE';
@@ -66,6 +70,7 @@ const EmergencyContext = createContext<EmergencyContextType | null>(null);
 const STORAGE_KEY_CASES = 'asva_cases_v2';
 const STORAGE_KEY_VITALS = 'asva_vitals_v2';
 const STORAGE_KEY_REPORTS = 'asva_reports_v2';
+const STORAGE_KEY_HOSPITALS = 'asva_hospital_operations_v1';
 const STORAGE_KEY_EVENTS = 'asva_realtime_events_fallback';
 
 const getSafeStorageValue = (key: string) => {
@@ -101,7 +106,15 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Active paramedic ambulance (AMB-1047 as per specification)
   const [activeAmbulance] = useState<Ambulance>(INITIAL_AMBULANCES[0]);
-  const [hospitals] = useState<Hospital[]>(INITIAL_HOSPITALS);
+  const [hospitals, setHospitals] = useState<Hospital[]>(() => {
+    try {
+      const saved = getSafeStorageValue(STORAGE_KEY_HOSPITALS);
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : INITIAL_HOSPITALS;
+    } catch {
+      return INITIAL_HOSPITALS;
+    }
+  });
   const [selectedHospitalId, setSelectedHospitalId] = useState<string>('HOSP-021');
   // Emergency state
   const [emergencies, setEmergencies] = useState<EmergencyCase[]>(() => {
@@ -153,6 +166,12 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error("Local storage error:", e);
     }
   }, [emergencies, vitalsMap, reportsMap]);
+
+  // Capacity and acceptance status are editable demo operations data. Facility
+  // names and map coordinates remain read-only dispatch references.
+  useEffect(() => {
+    setSafeStorageValue(STORAGE_KEY_HOSPITALS, JSON.stringify(hospitals));
+  }, [hospitals]);
 
   const applyRealtimeUpdate = (type: string, payload: any) => {
     if (type === 'EMERGENCY_UPDATED') {
@@ -425,6 +444,24 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     removeSafeStorageValue(STORAGE_KEY_REPORTS);
   };
 
+  const updateHospitalOperationalData = (
+    hospitalId: string,
+    data: Pick<Hospital, 'availableBeds' | 'icuBeds' | 'emergencyStatus'>
+  ) => {
+    const normaliseCapacity = (value: number) => Math.min(999, Math.max(0, Math.floor(value)));
+
+    setHospitals(current => current.map(hospital => (
+      hospital.hospitalId === hospitalId
+        ? {
+            ...hospital,
+            availableBeds: normaliseCapacity(data.availableBeds),
+            icuBeds: normaliseCapacity(data.icuBeds),
+            emergencyStatus: data.emergencyStatus
+          }
+        : hospital
+    )));
+  };
+
   // Ambulance Movement Simulation along route with live geofencing (functional update to prevent stale closures)
   useEffect(() => {
     if (isSimulatingMovement && routeCoordinates.length > 0 && activeEmergency) {
@@ -577,6 +614,7 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         setSelectedHospitalId,
         setSelectedCaseId,
+        updateHospitalOperationalData,
 
         connectionStatus: 'ONLINE_SYNC'
       }}

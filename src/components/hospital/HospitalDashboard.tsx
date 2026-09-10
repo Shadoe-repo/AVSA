@@ -43,14 +43,14 @@ export const HospitalDashboard: React.FC = () => {
           <img src={appLogo} alt="ASVA" className="w-8 h-8 rounded-full object-cover shadow-md shadow-blue-500/20" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-white">ASVA ER Command</span>
+              <span className="font-bold text-sm text-white">ASVA Emergency Command</span>
               <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live Hub
+                Live Operations
               </span>
             </div>
             <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-              <span>Hospital Scoped:</span>
+              <span>Location-aware triage:</span>
               <strong className="text-white font-medium">{selectedHospital.name}</strong>
             </div>
           </div>
@@ -84,7 +84,7 @@ export const HospitalDashboard: React.FC = () => {
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 text-xs text-emerald-300">
             <Bed className="w-4 h-4 text-emerald-400" />
             <span>
-              <strong>{selectedHospital.availableBeds}</strong> ER Beds Available (<strong className="text-white">{selectedHospital.icuBeds}</strong> ICU)
+              <strong>{selectedHospital.availableBeds}</strong> ER beds (<strong className="text-white">{selectedHospital.icuBeds}</strong> ICU ready)
             </span>
           </div>
         </div>
@@ -93,15 +93,13 @@ export const HospitalDashboard: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-2xl bg-white/5 border border-white/10">
             <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white">
-              {currentUser?.name.charAt(0) || 'D'}
+              {currentUser?.name.charAt(0) || 'O'}
             </div>
             <div className="text-left">
               <div className="text-[11px] font-bold text-white leading-tight">
-                {currentUser?.name || 'Dr. Debanjan Chatterjee, MD'}
+                {currentUser?.name || 'Operations Lead'}
               </div>
-              <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">
-                {currentUser?.role || 'ER Chief'} • Google Auth
-              </div>
+              <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">Secure clinical access</div>
             </div>
           </div>
 
