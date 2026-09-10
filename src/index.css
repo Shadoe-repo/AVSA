@@ -22,11 +22,21 @@ html[data-theme='light'] [class~="bg-[#08131d]/90"] {
   background-color: var(--bg) !important;
 }
 
+/* The Hospital ER sidebars use this translucent dark surface. Without an
+   explicit light value, it tints the whole dashboard charcoal. */
+html[data-theme='light'] [class~="bg-[#08131d]/60"] {
+  background-color: var(--panel) !important;
+}
+
 html[data-theme='light'] [class~="bg-white/5"] {
   background-color: var(--surface) !important;
 }
 
 html[data-theme='light'] [class~="bg-white/10"] {
+  background-color: var(--surface-strong) !important;
+}
+
+html[data-theme='light'] [class~="bg-black/30"] {
   background-color: var(--surface-strong) !important;
 }
 
