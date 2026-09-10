@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { VoiceExtractionResult, ConsciousnessLevel } from '../../types';
 import { GlassButton } from '../common/GlassButton';
-import { CheckCircle2, AlertTriangle, Heart, Activity, Wind, Brain } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Heart, Activity, Wind, Brain, ShieldAlert, TestTube2 } from 'lucide-react';
 
 interface VitalsConfirmationSheetProps {
   extraction: VoiceExtractionResult;
@@ -12,6 +12,8 @@ interface VitalsConfirmationSheetProps {
     respiratoryRate: number;
     consciousness: ConsciousnessLevel;
     treatment?: string;
+    allergy?: string;
+    bloodGlucose?: number;
   }) => void;
   onCancel: () => void;
 }
@@ -27,6 +29,8 @@ export const VitalsConfirmationSheet: React.FC<VitalsConfirmationSheetProps> = (
   const [rr, setRr] = useState<number>(extraction.respiratoryRate || 20);
   const [consciousness, setConsciousness] = useState<ConsciousnessLevel>(extraction.consciousness || 'ALERT');
   const [treatment, setTreatment] = useState<string>(extraction.treatment || 'Supplemental Oxygen, IV Line Established');
+  const [allergy, setAllergy] = useState<string>(extraction.allergy || 'None reported');
+  const [bloodGlucose, setBloodGlucose] = useState<number>(extraction.bloodGlucose || 96);
 
   const isAmbiguous = (field: string) => extraction.ambiguousFields.includes(field);
 
@@ -38,7 +42,9 @@ export const VitalsConfirmationSheet: React.FC<VitalsConfirmationSheetProps> = (
       spo2: Number(spo2),
       respiratoryRate: Number(rr),
       consciousness,
-      treatment
+      treatment,
+      allergy,
+      bloodGlucose: Number(bloodGlucose)
     });
   };
 
@@ -124,6 +130,38 @@ export const VitalsConfirmationSheet: React.FC<VitalsConfirmationSheetProps> = (
               value={rr}
               onChange={(e) => setRr(Number(e.target.value))}
               className="w-full bg-transparent text-xl font-bold text-white tabular-nums outline-none"
+              required
+            />
+          </div>
+
+          {/* Blood Glucose */}
+          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+              <TestTube2 className="w-3.5 h-3.5 text-emerald-400" /> Blood Glucose
+            </label>
+            <div className="flex items-center">
+              <input
+                type="number"
+                value={bloodGlucose}
+                onChange={(e) => setBloodGlucose(Number(e.target.value))}
+                className="w-full bg-transparent text-xl font-bold text-white tabular-nums outline-none"
+                required
+              />
+              <span className="text-slate-400 font-bold">mg/dL</span>
+            </div>
+          </div>
+
+          {/* Allergy */}
+          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" /> Allergy
+            </label>
+            <input
+              type="text"
+              value={allergy}
+              onChange={(e) => setAllergy(e.target.value)}
+              className="w-full bg-transparent text-sm font-semibold text-white outline-none"
+              placeholder="None reported"
               required
             />
           </div>

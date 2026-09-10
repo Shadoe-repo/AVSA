@@ -13,6 +13,8 @@ export function parseClinicalSpeech(transcript: string): VoiceExtractionResult {
   let emergencyType: EmergencyType | undefined = undefined;
   let severity: EmergencySeverity | undefined = undefined;
   let treatment: string | undefined = undefined;
+  let allergy: string | undefined = undefined;
+  let bloodGlucose: number | undefined = undefined;
 
   // Extract Heart Rate / Pulse
   const hrMatch = text.match(/(?:heart rate|pulse|hr|beats per minute|bpm)\s*(?:is|at|of)?\s*(\d{2,3})/i) 
@@ -127,6 +129,8 @@ export function parseClinicalSpeech(transcript: string): VoiceExtractionResult {
     emergencyType,
     severity,
     treatment,
+    allergy,
+    bloodGlucose,
     confidenceScore: Math.max(0.4, Number(confidenceScore.toFixed(2))),
     ambiguousFields,
     rawTranscript: transcript

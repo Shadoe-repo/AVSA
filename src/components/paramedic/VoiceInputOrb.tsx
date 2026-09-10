@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
-import { parseClinicalSpeech, CLINICAL_VOICE_PRESETS } from '../../services/voiceExtractor';
+import { Mic, Sparkles, RefreshCw } from 'lucide-react';
+import { parseClinicalSpeech } from '../../services/voiceExtractor';
 import { VoiceExtractionResult } from '../../types';
 
 interface VoiceInputOrbProps {
@@ -25,8 +25,6 @@ export const VoiceInputOrb: React.FC<VoiceInputOrbProps> = ({ onExtractionComple
   const handleStartListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      // If browser doesn't allow speech, use a default realistic phrase for quick demo
-      handleSimulateVoice(CLINICAL_VOICE_PRESETS[0].phrase);
       return;
     }
 
@@ -67,15 +65,6 @@ export const VoiceInputOrb: React.FC<VoiceInputOrbProps> = ({ onExtractionComple
       console.error('Speech recognition failed to start:', e);
       setIsListening(false);
     }
-  };
-
-  const handleSimulateVoice = (phrase: string) => {
-    setIsListening(true);
-    setTranscript(phrase);
-    setTimeout(() => {
-      setIsListening(false);
-      processText(phrase);
-    }, 1200);
   };
 
   const processText = (text: string) => {
@@ -126,34 +115,11 @@ export const VoiceInputOrb: React.FC<VoiceInputOrbProps> = ({ onExtractionComple
           <span className="text-slate-300 italic text-xs truncate">"{transcript}"</span>
         ) : (
           <span className="text-slate-400 text-xs">
-            Tap the orb to speak vitals (or select a quick clinical preset below)
+            Tap the orb to speak vitals, or type a manual value
           </span>
         )}
       </div>
 
-      {/* Quick Clinical Simulation Presets for Instant 1-Tap Testing */}
-      <div className="w-full">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
-          1-Tap Clinical Voice Scenarios
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {CLINICAL_VOICE_PRESETS.map((preset, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSimulateVoice(preset.phrase)}
-              disabled={isListening || isProcessing}
-              className="px-3 py-2 rounded-xl bg-purple-950/30 hover:bg-purple-900/40 border border-purple-500/20 hover:border-purple-500/40 text-left transition-all duration-150 active:scale-95 group"
-            >
-              <div className="text-xs font-semibold text-purple-300 group-hover:text-purple-200">
-                {preset.title}
-              </div>
-              <div className="text-[10px] text-slate-400 truncate mt-0.5">
-                "{preset.phrase.slice(0, 38)}..."
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };

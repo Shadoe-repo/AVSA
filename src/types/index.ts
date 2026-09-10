@@ -55,6 +55,8 @@ export interface VitalsRecord {
   respiratoryRate: number | null;
   temperature: number | null;
   consciousness: ConsciousnessLevel;
+  allergy?: string | null;
+  bloodGlucose?: number | null;
   recordedAt: string;
 }
 
@@ -111,6 +113,8 @@ export interface VoiceExtractionResult {
   emergencyType?: EmergencyType;
   treatment?: string;
   severity?: EmergencySeverity;
+  allergy?: string;
+  bloodGlucose?: number;
   confidenceScore: number;
   ambiguousFields: string[];
   rawTranscript: string;

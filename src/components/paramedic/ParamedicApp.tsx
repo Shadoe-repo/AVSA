@@ -17,8 +17,6 @@ import {
   Building2, 
   Navigation, 
   FileUp, 
-  Play, 
-  Pause, 
   RotateCcw, 
   CheckCircle2, 
   AlertOctagon, 
@@ -96,18 +94,6 @@ export const ParamedicApp: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {activeEmergency && (
-            <GlassButton
-              size="sm"
-              variant={isSimulatingMovement ? 'secondary' : 'primary'}
-              onClick={toggleSimulation}
-              icon={isSimulatingMovement ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              className="text-xs"
-            >
-              {isSimulatingMovement ? 'Pause GPS' : 'Simulate GPS'}
-            </GlassButton>
-          )}
-
           <button
             onClick={resetEmergency}
             className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors text-xs flex items-center gap-1"
