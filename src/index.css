@@ -15,11 +15,14 @@
 
 /* Literal dark utility classes are used by the operational views. Keep them
    readable when the user switches the shared theme variables to light. */
+html[data-theme='light'] body,
+html[data-theme='light'] #root,
 html[data-theme='light'] .bg-asva-bg,
 html[data-theme='light'] [class~="bg-[#071018]/85"],
 html[data-theme='light'] [class~="bg-[#071018]/90"],
 html[data-theme='light'] [class~="bg-[#08131d]/90"] {
   background-color: var(--bg) !important;
+  color: var(--text-primary) !important;
 }
 
 /* The Hospital ER sidebars use this translucent dark surface. Without an

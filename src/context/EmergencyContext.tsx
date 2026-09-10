@@ -18,6 +18,7 @@ import {
   INITIAL_REPORTS 
 } from '../data/initialData';
 import { fetchRoutePoints, checkHospitalGeofence, calculateDistanceKm, estimateEtaMinutes } from '../services/routingService';
+import { findNearbyHospitals } from '../services/nearbyHospitalService';
 import { snowflakeWarehouse } from '../services/snowflakeSync';
 
 interface EmergencyContextType {
@@ -104,8 +105,8 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Cross-tab real-time communication channel with browser-safe fallback
   const broadcastRef = useRef<BroadcastChannel | null>(null);
 
-  // Active paramedic ambulance (AMB-1047 as per specification)
-  const [activeAmbulance] = useState<Ambulance>(INITIAL_AMBULANCES[0]);
+  // Active paramedic ambulance starts from the primary demo unit but can be refreshed from device GPS.
+  const [activeAmbulance, setActiveAmbulance] = useState<Ambulance>(INITIAL_AMBULANCES[0]);
   const [hospitals, setHospitals] = useState<Hospital[]>(() => {
     try {
       const saved = getSafeStorageValue(STORAGE_KEY_HOSPITALS);
@@ -274,6 +275,75 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       cancelled = true;
     };
   }, [activeEmergency?.emergencyId, activeEmergency?.hospitalId, hospitals]);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+      return;
+    }
+
+    const fallbackHospitals = INITIAL_HOSPITALS;
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const currentCoordinates = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+
+        setActiveAmbulance(prev => ({
+          ...prev,
+          currentCoordinates
+        }));
+
+        setEmergencies(prev => prev.map(emg => {
+          if (emg.ambulanceId !== activeAmbulance.ambulanceId || emg.status === 'COMPLETED') {
+            return emg;
+          }
+
+          return {
+            ...emg,
+            currentLocation: currentCoordinates,
+            updatedAt: new Date().toISOString()
+          };
+        }));
+
+        try {
+          const nearbyHospitals = await findNearbyHospitals(currentCoordinates);
+          const mappedHospitals: Hospital[] = nearbyHospitals.length > 0
+            ? nearbyHospitals.map((hospital, index) => ({
+                hospitalId: `OSM-${hospital.id}-${index}`,
+                name: hospital.name,
+                coordinates: hospital.coordinates,
+                availableBeds: 8 + index,
+                icuBeds: index % 3,
+                emergencyStatus: 'ACCEPTING',
+                capabilities: ['TRAUMA_LEVEL_1', 'GENERAL_SURGERY', 'STROKE_CENTRE'],
+                status: 'ACTIVE',
+                distanceKm: hospital.distanceKm,
+                etaMinutes: estimateEtaMinutes(hospital.distanceKm),
+                address: 'OpenStreetMap mapped facility',
+                phone: '+91 00000 00000'
+              }))
+            : fallbackHospitals;
+
+          setHospitals(mappedHospitals);
+          if (!mappedHospitals.find(h => h.hospitalId === selectedHospitalId)) {
+            setSelectedHospitalId(mappedHospitals[0]?.hospitalId || 'HOSP-021');
+          }
+        } catch {
+          setHospitals(fallbackHospitals);
+        }
+      },
+      () => {
+        setHospitals(fallbackHospitals);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
+  }, []);
 
   // Start Emergency (1-tap workflow from TRD)
   const startEmergency = (
